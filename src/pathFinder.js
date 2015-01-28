@@ -46,24 +46,28 @@ function PathFinder(rows, cols, sidesMethod) {
                 return false; // if it is already checked. it is not available.
             }
             return true;
+        } else if (used[y] === undefined || used[y][x] === undefined) {
+            return -1;
         }
         return false;
     }
 
     function setChecked(x, y) {
-        total += 1;
-        checked[y][x] = total.toString(32);
+        if (checked[y] && checked[y][x] !== undefined) {
+            total += 1;
+            checked[y][x] = total.toString(32);
+        }
     }
 
     function checkPoint(point, side, fromPoint) {
-        var result;
-        if (available(point.x, point.y)) {
+        var result, avail;
+        if ((avail = available(point.x, point.y))) {
             if (sidesMethod) {
                 result = sidesMethod(fromPoint, side, point);
             } else {
                 result = true;
             }
-            if (result) {
+            if (result && avail !== -1) {
                 setChecked(point.x, point.y);
             }
             //log(checked);
@@ -74,6 +78,7 @@ function PathFinder(rows, cols, sidesMethod) {
 
     function next(point) {
         var i,
+            value,
             points = [
                 {side: 'top', point: point.clone().add(deltaPoints.top)},
                 {side: 'left', point: point.clone().add(deltaPoints.left)},
@@ -82,8 +87,15 @@ function PathFinder(rows, cols, sidesMethod) {
             ],
             len = points.length;
         for(i = 0; i < len;  i += 1) {
-            if (checkPoint(points[i].point, points[i].side, point)) {
-                next(points[i].point);
+            value = checkPoint(points[i].point, points[i].side, point);
+            if (value === -1) {
+                return value;
+            }
+            if (value) {
+                value = next(points[i].point);
+                if (value === -1) {
+                    return value;
+                }
             }
         }
     }
@@ -91,10 +103,14 @@ function PathFinder(rows, cols, sidesMethod) {
     function isContained(x, y, logValue) {
         total = 0;
         checked = build(rows, cols);
-        var point = new Point(x, y);
+        var point = new Point(x, y),
+            value;
         if (available(point.x, point.y)) {
             setChecked(point.x, point.y);
-            next(point);
+            value = next(point);
+            if (value === -1) {
+                return -1;
+            }
         }
         var availablePoints = getAvailable(used, true);
         var contained = getAvailable(checked);
@@ -119,6 +135,13 @@ function PathFinder(rows, cols, sidesMethod) {
         return contained;
     }
 
+    function addUsed(points) {
+        var i, len = points.length;
+        for(i = 0; i < len; i += 1) {
+            used[points[i].y][points[i].x] = 1;
+        }
+    }
+
     function log(board) {
         var str = '', y, len = board.length;
         for(y = 0; y < len; y += 1) {
@@ -129,5 +152,6 @@ function PathFinder(rows, cols, sidesMethod) {
 
     this.log = log;
     this.isContained = isContained;
+    this.addUsed = addUsed;
 
 }
