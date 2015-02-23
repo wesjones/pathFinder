@@ -1,12 +1,16 @@
 function PathFinder(rows, cols, sidesMethod) {
     var used = build(rows, cols);
     var checked = build(rows, cols);
-    var deltaPoints = {
-        top: new Point(0, -1),
-        left: new Point(-1, 0),
-        right: new Point(1, 0),
-        bottom: new Point(0, 1)
-    };
+    var deltaPoints = [
+        new Point(0, -1),
+        new Point(-1, 0),
+        new Point(1, 0),
+        new Point(0, 1)
+    ];
+    deltaPoints.top = deltaPoints[0];
+    deltaPoints.left = deltaPoints[1];
+    deltaPoints.right = deltaPoints[2];
+    deltaPoints.bottom = deltaPoints[3];
     var total = 0;
 
 
@@ -142,6 +146,56 @@ function PathFinder(rows, cols, sidesMethod) {
         }
     }
 
+    // find the shortest path between the 2 points.
+    function findPath(startPoint, endPoint, board, validValues) {
+        var i, len = validValues.length, validCache = {};
+        for(i = 0; i < len; i += 1) {
+            validCache[validValues[i]] = true;
+        }
+        startPoint = new Point(startPoint.x, startPoint.y);
+        endPoint = new Point(endPoint.x, endPoint.y);
+        return _findPath(startPoint, endPoint, board, validCache, {}, []);
+    }
+
+    function _findPath(startPoint, endPoint, board, validCache, checked, points) {
+        var i, len = deltaPoints.length, point, value, key, result;
+        for(i = 0; i < len; i += 1) {
+            point = startPoint.clone().add(deltaPoints[i]);
+            value = board[point.y] && board[point.y][point.x];
+            if (value !== undefined && validCache[value] && !checked[(key = point.x + ':' + point.y)]) {
+                checked[key] = true;
+                if (point.x == endPoint.x && point.y === endPoint.y) {
+                    points.push(point);
+                    logPath(board, points);
+                    return points;
+                } else if ((result = _findPath(point, endPoint, board, validCache, checked, points.concat([point])))) {
+                    return result;
+                }
+            }
+        }
+    }
+
+    function cloneBoard(board) {
+        var ary = [], y, x, ylen = board.length, xlen;
+        for(y = 0; y < ylen; y += 1) {
+            xlen = board[y].length;
+            ary.push([]);
+            for(x = 0; x < xlen; x += 1) {
+                ary[y][x] = board[y][x];
+            }
+        }
+        return board;
+    }
+
+    function logPath(board, path) {
+        var b = cloneBoard(board), i, len = path.length, point;
+        for(i = 0; i < len; i += 1) {
+            point = path[i];
+            b[point.y][point.x] = 'X';
+        }
+        log(b);
+    }
+
     function log(board) {
         var str = '', y, len = board.length;
         for(y = 0; y < len; y += 1) {
@@ -153,5 +207,5 @@ function PathFinder(rows, cols, sidesMethod) {
     this.log = log;
     this.isContained = isContained;
     this.addUsed = addUsed;
-
+    this.findPath = findPath;
 }
