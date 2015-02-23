@@ -147,28 +147,31 @@ function PathFinder(rows, cols, sidesMethod) {
     }
 
     // find the shortest path between the 2 points.
-    function findPath(startPoint, endPoint, board, validValues) {
-        var i, len = validValues.length, validCache = {};
+    function findPath(startPoint, endPoint, board, validValues, logResult) {
+        var i, len = validValues.length, validCache = {}, result;
         for(i = 0; i < len; i += 1) {
             validCache[validValues[i]] = true;
         }
         startPoint = new Point(startPoint.x, startPoint.y);
         endPoint = new Point(endPoint.x, endPoint.y);
-        return _findPath(startPoint, endPoint, board, validCache, {}, []);
+        result = _findPath(startPoint, endPoint, board, validCache, {}, []);
+        if (result && logResult) {
+            logPath(board, result);
+        }
+        return result;
     }
 
-    function _findPath(startPoint, endPoint, board, validCache, checked, points) {
+    function _findPath(startPoint, endPoint, board, validCache, ckd, points) {
         var i, len = deltaPoints.length, point, value, key, result;
         for(i = 0; i < len; i += 1) {
             point = startPoint.clone().add(deltaPoints[i]);
             value = board[point.y] && board[point.y][point.x];
-            if (value !== undefined && validCache[value] && !checked[(key = point.x + ':' + point.y)]) {
-                checked[key] = true;
+            if (value !== undefined && validCache[value] && !ckd[(key = point.x + ':' + point.y)]) {
+                ckd[key] = true;
                 if (point.x == endPoint.x && point.y === endPoint.y) {
                     points.push(point);
-                    logPath(board, points);
                     return points;
-                } else if ((result = _findPath(point, endPoint, board, validCache, checked, points.concat([point])))) {
+                } else if ((result = _findPath(point, endPoint, board, validCache, ckd, points.concat([point])))) {
                     return result;
                 }
             }
@@ -184,7 +187,7 @@ function PathFinder(rows, cols, sidesMethod) {
                 ary[y][x] = board[y][x];
             }
         }
-        return board;
+        return ary;
     }
 
     function logPath(board, path) {
